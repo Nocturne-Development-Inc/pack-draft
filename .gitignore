@@ -8,6 +8,9 @@ dist/
 *.tsbuildinfo
 plans/
 
+# Personal Cursor Ponytail checkout (hooks point here; not part of this repo)
+ponytail/
+
 # Terraform
 **/.terraform/
 *.tfstate

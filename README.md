@@ -171,7 +171,7 @@ MDX extensions are listed as unwanted here so they do not treat `.tf` files as M
 
 ## Cursor: Ponytail (optional)
 
-[Ponytail](https://github.com/DietrichGebert/ponytail) steers the Cursor agent toward the smallest correct change. It is a personal install (user hooks), not checked into this repo.
+[Ponytail](https://github.com/DietrichGebert/ponytail) steers the Cursor agent toward the smallest correct change. It is a personal install (user hooks in `~/.cursor/hooks.json`), not checked into this repo. New Agent chats start at **full** unless you turn it off for that chat or set the default to `off`.
 
 **macOS / Linux**
 
@@ -189,12 +189,24 @@ node ponytail/scripts/cursor-hooks.js install
 
 Leave the clone where you put it — the hooks point at that path. Open a new Cursor chat to activate.
 
+Cursor’s hook runner often has no `node` on `PATH` (common with nvm/fnm). If the Hooks output channel shows `command not found: node` / exit 127, edit `~/.cursor/hooks.json` and replace the leading `node` with the absolute binary from `which node` (for example `/usr/local/bin/node`). Then open a new chat.
+
+Persist the default (optional; `full` is already the built-in default):
+
+```sh
+# ~/.config/ponytail/config.json
+{ "defaultMode": "full" }
+```
+
+Or send `/ponytail default full` in a chat once hooks are working.
+
 | Message | Effect |
 | --- | --- |
 | `/ponytail` | Show the current level |
 | `/ponytail lite` | Light touch |
-| `/ponytail full` | Default |
+| `/ponytail full` | Default intensity |
 | `/ponytail ultra` | Max minimalism |
 | `/ponytail off` | Turn off for this chat |
+| `/ponytail default full` | New chats start at full |
 
 Uninstall: `node ponytail/scripts/cursor-hooks.js uninstall`. Full agent list and options: [INSTALL.md](https://github.com/DietrichGebert/ponytail/blob/main/INSTALL.md).
