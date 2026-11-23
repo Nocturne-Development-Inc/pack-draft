@@ -9,13 +9,15 @@ alwaysApply: false
 
 Branch names, commit scopes, and PR titles all expect a **Jira ticket** (e.g. `ENG-1234`).
 
-**Before** creating a branch, committing, pushing, or opening/updating a PR:
+**Before** creating a branch, committing, or opening/updating a PR:
 
 1. Resolve the ticket from the user’s request, branch name, or commit history.
 2. If you **cannot** identify the ticket with confidence, **ask the user** — do not guess, omit the scope, or use placeholder branch names like `feat/refactor/...` without a ticket.
-3. Do not commit or push spill/work that belongs on a different ticket than the current branch (split branch first; see [references/pr-style.md](references/pr-style.md)).
+3. Do not commit spill/work that belongs on a different ticket than the current branch (split branch first; see [references/pr-style.md](references/pr-style.md)).
 
-Only proceed with `git commit`, `git push`, and `gh pr create` / `gh pr edit` once the ticket is confirmed and reflected in branch + `type(TICKET):` title/message.
+Only proceed with `git commit` and `gh pr create` / `gh pr edit` once the ticket is confirmed and reflected in branch + `type(TICKET):` title/message.
+
+**Never push.** Do not run `git push` or any command that pushes to origin. Give the user the push command and wait. See [never-push-to-origin.mdc](never-push-to-origin.mdc).
 
 ## Branch Naming
 
@@ -65,15 +67,15 @@ When an epic is a chain of dependent tickets, stack **one PR per ticket**. Later
 
 Use `gh stack` in this repo
 
-1. Finish and push the current top of the stack (or check it out with `gh stack checkout`).
+1. Finish the current top of the stack locally (or check it out with `gh stack checkout`). Ask the user to push if the remote is behind.
 2. Add the next ticket's branch on top of it:
    `gh stack add feat/<ticket-lowercase>/<short-description>`
 3. Commit the ticket's work on that branch.
-4. `gh stack submit --auto` to push and open/update PRs. New PRs are drafts unless you pass `--open`.
+4. Ask the user to run `gh stack submit --auto` (it pushes). Do not run submit yourself. New PRs are drafts unless they pass `--open`.
 5. Fill in the new PR body (use `.github/PULL_REQUEST_TEMPLATE.md` when present). `--base` is handled by the stack: each PR targets the previous branch.
-6. After a parent merges, `gh stack sync` so remaining PRs retarget. Do not retarget a child PR to `main` by hand while its parent is still open.
+6. After a parent merges, ask the user to run `gh stack sync` so remaining PRs retarget. Do not retarget a child PR to `main` by hand while its parent is still open.
 
-Do not squash or rebase already-pushed parent PRs to "clean up" the stack. Never force-push. If the top branch needs a follow-up, add a new commit on that branch and `gh stack submit --auto` again.
+Do not squash or rebase already-pushed parent PRs to "clean up" the stack. Never force-push. If the top branch needs a follow-up, add a new commit on that branch and ask the user to `gh stack submit --auto` again.
 
 ### Updating PR descriptions
 
@@ -89,5 +91,6 @@ gh api repos/AliEliasNocturne/pack-draft/pulls/<NUMBER> \
 
 ## Git Preferences
 
+- **Never push to origin** (agent). The user pushes. See [never-push-to-origin.mdc](never-push-to-origin.mdc).
 - **Never force-push.** If a commit needs correcting after push, create a new commit instead of amending + force-pushing.
 - Never amend commits that have already been pushed to the remote.

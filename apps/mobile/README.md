@@ -4,50 +4,61 @@
 
 ## Prerequisites
 
-- Dependencies installed from the **monorepo root**: `pnpm install`
-- **iOS:** Xcode and a simulator (or a device with Expo Go)
-- **Android:** Android Studio and an emulator (or a device with Expo Go)
+Install monorepo tooling from the **repo root** first ([root README](../../README.md)): Node 22+, pnpm via Corepack, and Aikido Safe Chain. Then `pnpm install` at the root.
+
+### macOS
+
+- **iOS:** Xcode from the Mac App Store, then open Xcode once to finish installing components. Simulator works with `pnpm ios`.
+- **Android (optional):** [Android Studio](https://developer.android.com/studio) + an emulator, or Expo Go on a device.
+- Or skip native tooling and use [Expo Go](https://expo.dev/go) on a physical device with `pnpm dev:mobile`.
+
+### Windows
+
+- **Android:** [Android Studio](https://developer.android.com/studio) + an emulator, or Expo Go on a device. Use `pnpm android` or `pnpm dev:mobile`.
+- **iOS:** The iOS Simulator is not available on Windows. Use a Mac, a cloud Mac builder (EAS), or Expo Go on a physical iPhone.
+- Enable Developer Mode if Windows asks when running emulators.
 
 ## Development
 
-From the repo root:
+### macOS
 
 ```sh
 pnpm dev:mobile    # Expo dev server
-pnpm ios           # open iOS simulator
-pnpm android       # open Android emulator
+pnpm ios           # iOS simulator
+pnpm android       # Android emulator (if installed)
 ```
 
-From this directory:
+### Windows (PowerShell)
 
-```sh
-pnpm start
-pnpm ios
-pnpm android
+```powershell
+pnpm dev:mobile    # Expo dev server
+pnpm android       # Android emulator (if installed)
+# pnpm ios is not supported on Windows
 ```
 
-Press `i` / `a` in the Expo CLI to open a simulator if you started with `start` only.
+From this directory: `pnpm start`, then press `i` / `a` in the Expo CLI when that platform is available.
 
 ## Scripts
 
 Run from `apps/mobile` or with `pnpm --filter @pack-draft/mobile <script>` from the root.
 
-| Script      | Purpose                     |
-| ----------- | --------------------------- |
-| `start`     | Expo dev server             |
-| `ios`       | Dev server + iOS            |
-| `android`   | Dev server + Android        |
-| `web`       | Dev server + web (optional) |
-| `typecheck` | `tsc --noEmit`              |
-| `lint`      | ESLint                      |
-| `format`    | Prettier write              |
-| `test`      | Jest (`jest-expo`)          |
+| Script      | Purpose                     | macOS | Windows |
+| ----------- | --------------------------- | ----- | ------- |
+| `start`     | Expo dev server             | yes   | yes     |
+| `ios`       | Dev server + iOS            | yes   | no      |
+| `android`   | Dev server + Android        | yes   | yes     |
+| `web`       | Dev server + web (optional) | yes   | yes     |
+| `typecheck` | `tsc --noEmit`              | yes   | yes     |
+| `lint`      | ESLint                      | yes   | yes     |
+| `format`    | Prettier write              | yes   | yes     |
+| `test`      | Jest (`jest-expo`)          | yes   | yes     |
 
-Copy `.env.example` to `.env` when the app needs an API base URL (`EXPO_PUBLIC_API_URL`).
+**macOS / Linux:** `cp .env.example .env` when you need `EXPO_PUBLIC_API_URL`.  
+**Windows:** `Copy-Item .env.example .env`.
 
 ## Adding dependencies
 
-Use Expo’s resolver so versions match the SDK — **do not** `pnpm add` native/Expo packages directly:
+Use Expo’s resolver so versions match the SDK — **do not** `pnpm add` native/Expo packages directly (same on Mac and Windows):
 
 ```sh
 pnpm --filter @pack-draft/mobile exec expo install <package-name>
@@ -72,6 +83,6 @@ This app targets Expo **58** (`expo` in `package.json`). Use versioned docs: [ht
 
 ## Related docs
 
-- [Root README](../../README.md) — monorepo overview
+- [Root README](../../README.md) — monorepo overview, Safe Chain, Mac/Windows setup
 - [ADR-008](../../docs/decisions/008-mobile-app-deployments.md) — builds, variants, EAS / Expo Workflows
 - [ADR-009](../../docs/decisions/009-testing-framework.md) — Jest + `jest-expo` (not wired in this scaffold yet)

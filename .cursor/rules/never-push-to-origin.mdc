@@ -1,0 +1,17 @@
+---
+description: Never push branches or tags to origin; leave publishing to the user
+alwaysApply: true
+---
+
+# Never push to origin
+
+Do not push to any remote.
+
+Never run:
+
+- `git push` (any form, including `-u`, `--tags`, or a named remote)
+- `gh stack submit` or other commands that push branches as a side effect
+
+Local commits, branches, and PR body drafts are fine when the user asks for them. After a local commit or branch is ready, tell the user the push command (for example `git push -u origin HEAD`) and let them run it.
+
+If a workflow (PR create, stack submit) requires a push first, stop and ask the user to push, then continue with `gh` only after the remote branch exists.

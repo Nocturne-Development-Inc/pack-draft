@@ -13,6 +13,11 @@
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "editor.detectIndentation": true,
+  "files.associations": {
+    "*.tf": "terraform",
+    "*.tfvars": "terraform",
+    "*.hcl": "terraform"
+  },
   "workbench.colorCustomizations": {
     "editorError.foreground": "#ff0f0f",
     "editorWarning.foreground": "#fff837",

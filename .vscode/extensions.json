@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "hashicorp.terraform",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "expo.vscode-expo-tools",
+    "ms-azuretools.vscode-docker"
+  ],
+  "unwantedRecommendations": [
+    "unifiedjs.vscode-mdx",
+    "awxxxxxx.vscode-mdx-checker"
+  ]
+}

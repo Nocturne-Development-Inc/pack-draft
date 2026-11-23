@@ -183,6 +183,56 @@
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared", "group": "check" },
       "problemMatcher": ["$tsc", "$eslint-stylish"]
+    },
+    {
+      "label": "infra:fmt",
+      "type": "shell",
+      "command": "pnpm run infra:fmt",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
+    },
+    {
+      "label": "infra:lint",
+      "type": "shell",
+      "command": "pnpm run infra:lint",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
+    },
+    {
+      "label": "infra:validate",
+      "type": "shell",
+      "command": "pnpm run infra:validate",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
+    },
+    {
+      "label": "infra:plan",
+      "type": "shell",
+      "command": "pnpm run infra:plan",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
+    },
+    {
+      "label": "infra:apply",
+      "type": "shell",
+      "command": "pnpm run infra:apply",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
+    },
+    {
+      "label": "infra:check",
+      "type": "shell",
+      "command": "pnpm run infra:check",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "group": "infra" },
+      "problemMatcher": []
     }
   ]
 }

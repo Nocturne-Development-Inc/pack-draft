@@ -6,11 +6,21 @@ Designed to match [ADR-003](../../docs/decisions/003-api-runtime-and-compute.md)
 
 ## Prerequisites
 
-Install dependencies from the **monorepo root** once (`pnpm install`). Node 22+ (see root `.nvmrc`). Docker is required for the local Postgres container.
+Install monorepo tooling from the **repo root** first ([root README](../../README.md)): Node 22+, pnpm via Corepack, Docker, and Aikido Safe Chain. Then `pnpm install` at the root.
+
+### macOS
+
+- Docker Desktop for Mac running
+- Terminal (zsh/bash) at the repo root for `pnpm` commands
+
+### Windows
+
+- Docker Desktop for Windows (WSL2 backend recommended)
+- PowerShell or Windows Terminal at the repo root for `pnpm` commands
 
 ## Local Postgres
 
-From the **repo root**:
+From the **repo root** (macOS / Linux / Windows):
 
 ```sh
 pnpm db:up
@@ -29,7 +39,7 @@ Stop it with `pnpm db:down` (data persists in the `pack_draft_pg` volume unless 
 
 ## Development
 
-From the repo root:
+### macOS / Linux
 
 ```sh
 cp apps/api/.env.example apps/api/.env   # optional — defaults match docker compose
@@ -38,11 +48,16 @@ pnpm db:migrate
 pnpm dev:api
 ```
 
-Or from this directory:
+### Windows (PowerShell)
 
-```sh
-pnpm dev
+```powershell
+Copy-Item apps\api\.env.example apps\api\.env   # optional
+pnpm db:up
+pnpm db:migrate
+pnpm dev:api
 ```
+
+Or from this directory: `pnpm dev`.
 
 Dev server: [http://localhost:3000/health](http://localhost:3000/health) (port overridable via `PORT`).
 
@@ -64,10 +79,10 @@ In `development` and `test`, a missing `DATABASE_URL` defaults to `postgresql://
 
 Schema lives under `src/db/schema/`. Shared audit fields (`created_at`, `updated_at`, `created_by`, `updated_by`) are defined once in `metadata.ts` and spread into tables. `created_at` / initial `updated_at` default on insert; on row updates, set `updated_at` and `updated_by` in code (no ORM or trigger auto-update).
 
-Workflow:
+Workflow (same commands on macOS and Windows):
 
 1. Edit TypeScript schema files.
-2. Generate SQL with a descriptive name (avoids Drizzle’s random adjective default):
+2. Generate SQL with a descriptive name:
 
    ```sh
    pnpm db:generate -- --name=create_users
@@ -119,14 +134,24 @@ Add routes by registering a `FastifyPluginAsyncZod` in `app.ts`, with `schema.re
 
 ## Production build
 
+**macOS / Linux**
+
 ```sh
 pnpm build
 PORT=3000 pnpm start
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+pnpm build
+$env:PORT = "3000"
+pnpm start
+```
+
 ## Related docs
 
-- [Root README](../../README.md) — monorepo commands
+- [Root README](../../README.md) — monorepo commands, Safe Chain, Mac/Windows setup
 - [ADR-001](../../docs/decisions/001-primary-database.md) — PostgreSQL
 - [ADR-003](../../docs/decisions/003-api-runtime-and-compute.md) — runtime and hosting
 - [ADR-012](../../docs/decisions/012-orm-and-migrations.md) — Drizzle ORM and migrations

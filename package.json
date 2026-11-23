@@ -23,6 +23,12 @@
     "format:check": "pnpm -r --if-present format:check",
     "test": "pnpm -r --if-present test",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "infra:fmt": "./infrastructure/scripts/fmt.sh",
+    "infra:lint": "./infrastructure/scripts/lint.sh",
+    "infra:validate": "./infrastructure/scripts/validate.sh",
+    "infra:plan": "./infrastructure/scripts/plan.sh",
+    "infra:apply": "./infrastructure/scripts/apply.sh",
+    "infra:check": "./infrastructure/scripts/lint.sh && ./infrastructure/scripts/validate.sh",
     "prepare": "husky"
   },
   "devDependencies": {

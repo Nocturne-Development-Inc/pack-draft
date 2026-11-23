@@ -1,0 +1,25 @@
+---
+description: Never install or download packages/tools; tell the user what to run instead
+alwaysApply: true
+---
+
+# Never install packages or tools
+
+Do not install, upgrade, or download dependencies or tooling in this environment.
+
+Never run:
+
+- `pnpm install`, `pnpm add`, `pnpm update`, `npm install`, `yarn`, `pip install`, `poetry add`, or similar
+- Terraform provider/plugin installs that download packages (`terraform init` that fetches providers, `tflint --init`, provider upgrades)
+- Tool installs or binary downloads (`brew install`, `curl`/`wget` of Terraform or other CLIs, unzipping release archives into PATH)
+
+If a command needs a missing package or tool:
+
+1. Stop before installing anything.
+2. Tell the user exactly what to install and which command to run on their machine.
+3. Wait for them to confirm it is installed before continuing.
+
+Examples of what to say:
+
+- "Run `pnpm install` at the repo root, then tell me when it finishes."
+- "Install Terraform 1.17.2+ (`brew install hashicorp/tap/terraform`), copy `infrastructure/.env.example` to `infrastructure/.env`, then say when ready."
