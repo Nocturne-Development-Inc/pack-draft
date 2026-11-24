@@ -1,12 +1,12 @@
-# ADR-015: Use CloudWatch for logs, Sentry for errors, and a paging tool for alerts
+# ADR-015: Use CloudWatch for logs and AWS alarms, PostHog for errors (and product analytics), and a paging tool for alerts
 
 ## Status
 
-Proposed. **The final choice is deferred until we are close to launch.**
+Proposed. **The final choice is deferred until we are close to launch.** Current lean is Option F (PostHog) over Option B (Sentry), mainly because the free tier covers launch volume.
 
 ## Date
 
-2026-11-19
+2026-11-19 (updated 2026-11-23)
 
 ## Timing
 
@@ -14,7 +14,7 @@ We do not need to pick or pay for any of these tools now. Until we are close to 
 
 - Rely on what ECS and AWS give for free. Container logs go to CloudWatch Logs and AWS metrics go to CloudWatch.
 - Write structured JSON logs with secrets redacted from the start. This costs nothing and works with every option.
-- Do not set up Sentry, PagerDuty, Datadog, or any other paid account yet.
+- Do not set up PostHog, Sentry, PagerDuty, Datadog, or any other paid account yet. A free PostHog project is fine for a staging spike if we want to validate the SDK before launch.
 
 Revisit this ADR before the first production release, and before the load tests in [ADR-007](./007-load-testing-framework.md) if we want dashboards for them. Prices and free tiers change, so re-check them then. The recommendation below is where we would start today.
 
@@ -31,7 +31,7 @@ What we need:
 - **A small team.** One or two people get paged. Phone or SMS must work at night.
 - **Money and personal data.** Logs must not hold tokens, card data, or more personal data than needed. The ledger in Postgres is the audit record, not the logs.
 
-Prices below are US list prices checked on 2026-11-19. Volumes are our estimates: launch is under 10 GB of logs and under 50,000 errors per month.
+Prices below are US list prices (CloudWatch/Sentry/etc. checked 2026-11-19; PostHog checked 2026-11-23). Volumes are our estimates: launch is under 10 GB of logs and under 50,000 errors per month.
 
 ## Options Considered
 
@@ -70,44 +70,62 @@ Datadog covers logs, AWS metrics, error tracking, on-call, and outside checks (S
 
 Rough launch cost, assuming 3 Fargate tasks billed as hosts, 10 GB of logs at about 1 KB per line (10 million events), and 2 on-call seats: $45 infrastructure + $18 logs + $25 errors + $40 on-call = **about $130 per month**, without APM. That is about 4 times Option B.
 
+### Option F: CloudWatch + PostHog + PagerDuty Free
+
+CloudWatch holds container logs and raises AWS metric alarms. Alarms go through SNS to PagerDuty. PostHog Cloud tracks errors in the API, worker, Lambdas, and Expo app, and can also take product analytics, feature flags, session replay, and (optionally) application logs.
+
+Free tier checked on 2026-11-23 (resets monthly, no card required on the free plan): 100,000 error exceptions, 1M analytics events, 10 GB logs ingested (14-day retention), 1M feature-flag requests, 5,000 session replays. Pay-as-you-go keeps the same free allowance; overage starts at about $0.00037 per exception and $0.25 per GB of logs. Billing limits stop capture at a spend cap.
+
+- Pros: One SDK covers backend and Expo. Free tier is larger than Sentry Team's included errors (100k vs 50k) and costs $0 at launch if we stay under it. Product analytics and feature flags come with the same project, so we avoid a second product tool later. Error alerts go to Slack or a webhook; spike alerts exist for bad deploys. Unlimited team members on free.
+- Cons: PostHog does not page a phone. Infra paging still needs CloudWatch + SNS + PagerDuty (same as Option B). Free plan is one project (staging and production share usage, or we pay for more projects). No built-in outside uptime check like Sentry's monitor — use a cheap third-party check or Cloudflare. Logs in PostHog are optional and default to 14 days; we still keep CloudWatch as the ECS default. Self-hosting PostHog on ECS is possible but out of scope; we use PostHog Cloud.
+
+Rough launch cost if we stay inside free limits: CloudWatch only (~$4). Same PagerDuty Free path as Option B. That undercuts Option B's ~$30 mainly by dropping the Sentry Team seat.
+
 Not evaluated: New Relic. It prices per GB and per user, and we have no reason to prefer it over Datadog.
 
 ## Decision
 
-We choose **Option B**: CloudWatch for logs and AWS metrics, Sentry for errors, and PagerDuty for paging. Estimated cost at launch is about **$30 per month** in production:
+We choose **Option F**: CloudWatch for logs and AWS metrics, PostHog for errors (and product analytics when we need it), and PagerDuty for paging. Estimated cost at launch is about **$4 per month** in production if we stay inside PostHog's free tier:
 
-| Item                                                         | Monthly  |
-| ------------------------------------------------------------ | -------- |
-| CloudWatch Logs, 10 GB ingested, 5 GB free, 30-day retention | ~$3      |
-| CloudWatch alarms, about 20 alarm metrics, 10 free           | ~$1      |
-| Sentry Team (annual billing)                                 | $26      |
-| PagerDuty Free                                               | $0       |
-| **Total**                                                    | **~$30** |
+| Item                                                         | Monthly |
+| ------------------------------------------------------------ | ------- |
+| CloudWatch Logs, 10 GB ingested, 5 GB free, 30-day retention | ~$3     |
+| CloudWatch alarms, about 20 alarm metrics, 10 free           | ~$1     |
+| PostHog (errors + analytics inside free tier)                | $0      |
+| PagerDuty Free                                               | $0      |
+| **Total**                                                    | **~$4** |
+
+Option B (Sentry) remains the fallback if PostHog's React Native / Expo error tracking or source maps fall short before launch. Re-check then.
 
 Why:
 
-1. **Cheapest path that still reaches a phone.** Option A cannot page. Options C and D cost the same or more and add log shipping work. Datadog (Option E) is the better product for tracing incidents, but it costs about 4 times as much at launch and its bill is harder to predict.
-2. **No new work for logs and metrics.** ECS, ALB, RDS, and the DLQ already report to CloudWatch. We write alarms in Terraform and add no agents.
-3. **Sentry covers both sides.** One tool handles the Fastify API and the Expo app, with release tracking. Its included uptime monitor is the outside check.
-4. **Easy to swap.** Each part is replaceable alone. If we want one vendor later, Better Stack accepts the Sentry SDK and can take logs from CloudWatch. Datadog can read CloudWatch metrics and logs, so moving to it later does not need a rewrite.
+1. **Cheapest path that still reaches a phone.** Option A cannot page. PostHog's free tier covers launch error volume; Sentry Team is $26 per month for a smaller included quota. Datadog stays the premium incident product and is still about 4× Option B.
+2. **No new work for logs and AWS metrics.** ECS, ALB, RDS, and the DLQ already report to CloudWatch. We write alarms in Terraform and add no agents. PostHog Logs are optional later if CloudWatch search becomes painful.
+3. **One product tool for app and API.** `posthog-node` on the server and `posthog-react-native` in Expo. Same project for errors and product events. Feature flags and session replay are available without a new vendor.
+4. **Easy to swap.** Error SDKs are isolated. If PostHog fails us, Sentry or Better Stack can replace it without touching CloudWatch alarms.
 
-We accept three vendors and the risk of Sentry overage. We reduce that risk with a spend cap in Sentry and client-side rate limits.
+We accept that paging stays on AWS + PagerDuty, and that PostHog free is one project. We set billing limits on errors and analytics so a crash loop cannot start a bill by surprise.
 
 ## Consequences
 
-- **Logs.** Log JSON with pino. Include request ID, user ID, and release. Redact `authorization`, cookies, tokens, and payment fields. Never log full request bodies on purchase routes.
-- **Retention.** Set it in Terraform: 30 days in production, 7 days in staging. If SOC 2 or PCI work needs more, export to S3 (see [ADR-014](./014-domain-hosting-and-ddos-protection.md)). [ADR-004](./004-auth-service.md) streams Auth0 logs to the same account.
-- **Alarms.** Write one CloudWatch alarm per item on the paging list above, in Terraform. Send these to PagerDuty through SNS. Send everything else (warnings, Cloudflare traffic spikes) to Slack with AWS Chatbot.
+- **Logs.** Log JSON with pino. Include request ID, user ID, and release. Redact `authorization`, cookies, tokens, and payment fields. Never log full request bodies on purchase routes. Keep CloudWatch as the primary log store from the ECS `awslogs` driver. Do not ship full container logs to PostHog at launch.
+- **Retention.** Set CloudWatch retention in Terraform: 30 days in production, 7 days in staging. If SOC 2 or PCI work needs more, export to S3 (see [ADR-014](./014-domain-hosting-and-ddos-protection.md)). [ADR-004](./004-auth-service.md) streams Auth0 logs to the same account.
+- **Alarms.** Write one CloudWatch alarm per item on the paging list above, in Terraform. Send these to PagerDuty through SNS. Send everything else (warnings, Cloudflare traffic spikes, PostHog issue-created alerts) to Slack with AWS Chatbot or PostHog's Slack integration.
 - **Page rarely.** Each alarm needs a short runbook link. If an alarm fires and needs no action, delete it or move it to Slack.
-- **Sentry.** Use the `@sentry/node` SDK in the API and worker, and `@sentry/react-native` in the Expo app. Use one project per app, with `staging` and `production` as environments. Upload source maps from CircleCI and EAS builds. Set sample rates for tracing at launch, such as 10%. Turn on a spend cap.
-- **Outside check.** Add a Sentry uptime monitor on the public health endpoint through Cloudflare. Also check the origin if possible.
+- **PostHog on ECS Fargate (API and worker).** Use PostHog Cloud, not a self-hosted PostHog cluster. Create one long-lived `posthog-node` client per process (module scope), with `enableExceptionAutocapture: true`. Store the project API key and host (`https://us.i.posthog.com` or EU) in the task definition / Secrets Manager. Tag events with `environment` (`staging` / `production`), `service` (`api` / `worker` / `sports-poller`), and release/git sha. On container stop, call `await client.shutdown()` from the SIGTERM handler so the last batch flushes before the task exits. Upload Node source maps from CircleCI on deploy.
+- **PostHog on Lambda (glue only).** [ADR-003](./003-api-runtime-and-compute.md) keeps the API on Fargate and uses Lambda only for short event-driven glue. For those functions: create the `PostHog` client outside the handler so warm containers reuse it; call `captureException` (or autocapture) inside the handler; before return, `flush()` and race it against `context.getRemainingTimeInMillis() - 100` so a cold flush cannot eat the whole timeout. Do not call `shutdown()` on every invocation — that tears down a client the next warm invoke would reuse.
+- **PostHog in Expo.** Use `posthog-react-native` (Expo's `eas integrations:posthog:connect` is fine). Enable exception autocapture. Upload JS source maps (and native symbols if we need native crash stacks) from EAS builds. Identify the user after auth so errors join product analytics.
+- **Outside check.** PostHog has no Sentry-style uptime monitor. Add a cheap external HTTP check on the public health endpoint through Cloudflare (or a free Better Stack / similar monitor) and page through the same PagerDuty path if it fails.
 - **PagerDuty Free limits.** 100 SMS or phone notifications per month. Test that a real page arrives on both iOS and Android. Move to Professional ($21 per user) if we pass the limit or need schedules and escalation.
-- **Dashboards.** Use the 3 free CloudWatch dashboards for load tests ([ADR-007](./007-load-testing-framework.md)) and drop days. Revisit Grafana Cloud if we need more.
-- **Revisit** when monthly cost passes about $100, when there are more than 2 on-call people, or when searching logs in CloudWatch becomes the slowest part of an incident.
+- **Dashboards.** Use the 3 free CloudWatch dashboards for load tests ([ADR-007](./007-load-testing-framework.md)) and drop days. Use PostHog insights for product and error trends. Revisit Grafana Cloud if we need more infra charts.
+- **Revisit** when monthly cost passes about $100, when there are more than 2 on-call people, when searching logs in CloudWatch becomes the slowest part of an incident, or if Expo error symbolication in PostHog is weaker than Sentry before launch.
 
 ## Sources
 
 - [Amazon CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
+- [PostHog pricing](https://posthog.com/pricing), [Error Tracking pricing](https://posthog.com/docs/error-tracking/pricing), [Logs pricing](https://posthog.com/docs/logs/pricing)
+- [PostHog Node.js library](https://posthog.com/docs/libraries/node), [Node error tracking](https://posthog.com/docs/error-tracking/installation/node)
+- [Expo + PostHog](https://docs.expo.dev/guides/using-posthog/)
 - [Sentry pricing](https://sentry.io/pricing/)
 - [PagerDuty pricing](https://www.pagerduty.com/pricing/incident-management/)
 - [Better Stack pricing](https://betterstack.com/pricing)
